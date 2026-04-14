@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+build/
+dist/
+results/
+native/build/
+native/out/
+.vs/
+.idea/
+.DS_Store
