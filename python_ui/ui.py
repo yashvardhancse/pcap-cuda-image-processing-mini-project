@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-import tkinter as tk
+import tkinter as tk #tkinter is a library(module), that contains many classes
 from tkinter import filedialog, messagebox, ttk
 
 import numpy as np
@@ -498,3 +498,24 @@ class ImageBenchmarkApp(tk.Tk):
 def main() -> None:
     app = ImageBenchmarkApp()
     app.mainloop()
+
+    ''' mainloop() starts an infinite loop that keeps running until you close the window
+    - keeps your window open
+    - waits for user actions like click
+    - responds to events
+    '''
+
+
+
+
+    '''
+   Your Python code
+      ↓
+tkinter (Python)
+      ↓
+_tkinter (C bridge)
+      ↓
+Tcl/Tk (C library)
+      ↓
+OS-specific GUI system
+    '''

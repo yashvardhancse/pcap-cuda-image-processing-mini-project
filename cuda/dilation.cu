@@ -68,7 +68,7 @@ __global__ void morphology_shared_kernel(const unsigned char* input, unsigned ch
     const int threads = blockDim.x * blockDim.y;
 
     for (int index = thread_index; index < tile_width * tile_height; index += threads) {
-        const int local_x = index % tile_width;
+        const int local_x = index % tile_width; //modulo and division are used to convert a linear index into 2D tile coordinates
         const int local_y = index / tile_width;
         const int global_x = cudaimg::clamp_int(block_x + local_x - 1, 0, width - 1);
         const int global_y = cudaimg::clamp_int(block_y + local_y - 1, 0, height - 1);

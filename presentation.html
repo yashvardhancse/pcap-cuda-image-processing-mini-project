@@ -1,0 +1,1363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CUDA Image Studio Presentation</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg-2: #0d1830;
+      --panel: rgba(18, 29, 51, 0.82);
+      --panel-2: rgba(24, 38, 65, 0.9);
+      --stroke: rgba(148, 181, 255, 0.16);
+      --text: #eaf1ff;
+      --muted: #9fb0d0;
+      --cyan: #33d6ff;
+      --mint: #38e4a7;
+      --gold: #ffc93c;
+      --coral: #ff7a6b;
+      --violet: #8a7dff;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+      --radius: 24px;
+      --maxw: 1280px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, Segoe UI, Helvetica Neue, Arial, sans-serif;
+      background:
+        radial-gradient(circle at 15% 15%, rgba(51, 214, 255, 0.15), transparent 24%),
+        radial-gradient(circle at 85% 10%, rgba(56, 228, 167, 0.12), transparent 20%),
+        radial-gradient(circle at 80% 82%, rgba(138, 125, 255, 0.12), transparent 25%),
+        linear-gradient(180deg, #06101d 0%, #0a1529 48%, #07101d 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at center, black 0%, rgba(0, 0, 0, 0.8) 70%, transparent 100%);
+      opacity: 0.24;
+    }
+
+    .deck {
+      width: min(calc(100vw - 32px), var(--maxw));
+      margin: 0 auto;
+      padding: 18px 0 36px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(22px);
+      background: linear-gradient(180deg, rgba(7, 17, 31, 0.96), rgba(7, 17, 31, 0.72));
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 18px;
+    }
+
+    .topbar-inner {
+      width: min(calc(100vw - 32px), var(--maxw));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--cyan), var(--mint) 45%, var(--violet));
+      box-shadow: 0 12px 30px rgba(51, 214, 255, 0.25);
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .logo::after {
+      content: "";
+      position: absolute;
+      inset: 11px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.88);
+      transform: rotate(10deg);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.02rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .nav a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.86rem;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.09);
+      background: rgba(255,255,255,0.03);
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .nav a:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.16);
+    }
+
+    .slide {
+      min-height: calc(100vh - 104px);
+      padding: 22px;
+      border: 1px solid var(--stroke);
+      border-radius: 30px;
+      background: linear-gradient(180deg, rgba(22, 34, 56, 0.84), rgba(12, 20, 36, 0.9));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 22px;
+    }
+
+    .slide::before {
+      content: "";
+      position: absolute;
+      inset: auto -8% -60% auto;
+      width: 380px;
+      height: 380px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(51, 214, 255, 0.18), transparent 62%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .slide::after {
+      content: "";
+      position: absolute;
+      left: -40px;
+      top: -40px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56, 228, 167, 0.12), transparent 64%);
+      pointer-events: none;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      align-items: center;
+      min-height: calc(100vh - 148px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #b9d7ff;
+      font-size: 0.88rem;
+      letter-spacing: 0.02em;
+    }
+
+    .title {
+      margin: 18px 0 12px;
+      font-size: clamp(2.8rem, 5.5vw, 5.8rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+    }
+
+    .title span {
+      background: linear-gradient(90deg, var(--cyan), var(--mint), var(--gold));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+      line-height: 1.7;
+      color: var(--muted);
+      margin: 0 0 22px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 28px;
+    }
+
+    .chip {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+      border: 0;
+      color: #06101d;
+      background: linear-gradient(135deg, var(--gold), #ffd86b);
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      box-shadow: 0 18px 40px rgba(255, 201, 60, 0.24);
+    }
+
+    .button.secondary {
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: none;
+    }
+
+    .hero-visual {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .stat-card,
+    .feature-card,
+    .panel,
+    .note,
+    .shot,
+    .timeline-item,
+    .metric,
+    .flow-step {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(30, 46, 76, 0.9), rgba(16, 25, 44, 0.95));
+      border-radius: 22px;
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+    }
+
+    .stat-card {
+      padding: 18px;
+      min-height: 150px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -24px -40px auto;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(51, 214, 255, 0.16), transparent 68%);
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #9bb4d8;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-size: clamp(1.5rem, 2.6vw, 2.5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      margin: 0;
+    }
+
+    .stat-detail {
+      color: var(--muted);
+      margin: 10px 0 0;
+      line-height: 1.6;
+    }
+
+    .section-title {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -0.04em;
+    }
+
+    .section-subtitle {
+      margin: 0 0 22px;
+      color: var(--muted);
+      max-width: 860px;
+      line-height: 1.7;
+      font-size: 1.02rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card,
+    .panel,
+    .note {
+      padding: 18px;
+    }
+
+    .feature-card h3,
+    .panel h3,
+    .note h3,
+    .timeline-item h3,
+    .metric h3,
+    .flow-step h3 {
+      margin: 0 0 10px;
+      font-size: 1.12rem;
+    }
+
+    .feature-card p,
+    .panel p,
+    .note p,
+    .timeline-item p,
+    .metric p,
+    .flow-step p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .accent {
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .flow-step {
+      padding: 18px 16px;
+      min-height: 176px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flow-step .num {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(51, 214, 255, 0.18), rgba(56, 228, 167, 0.18));
+      color: #dbf6ff;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .flow-step:nth-child(2) .num { color: #ffe499; }
+    .flow-step:nth-child(3) .num { color: #d3ccff; }
+    .flow-step:nth-child(4) .num { color: #b6ffe7; }
+    .flow-step:nth-child(5) .num { color: #ffc8c1; }
+
+    .band {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      font-size: 0.84rem;
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 14px;
+    }
+
+    .timeline-item {
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      font-weight: 800;
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, rgba(51, 214, 255, 0.18), rgba(138, 125, 255, 0.18));
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .shot {
+      overflow: hidden;
+    }
+
+    .shot .frame {
+      aspect-ratio: 16 / 10;
+      background: #0b1325;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .shot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .shot .cap {
+      padding: 14px 16px 16px;
+      color: var(--muted);
+      line-height: 1.6;
+      min-height: 76px;
+    }
+
+    .shot .cap strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .metric {
+      padding: 18px;
+      min-height: 162px;
+      position: relative;
+    }
+
+    .metric .value {
+      margin: 12px 0 8px;
+      font-size: clamp(1.7rem, 4vw, 2.7rem);
+      font-weight: 800;
+    }
+
+    .metric .value.cyan { color: var(--cyan); }
+    .metric .value.gold { color: var(--gold); }
+    .metric .value.mint { color: var(--mint); }
+
+    .formula {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .formula .panel {
+      min-height: 120px;
+      display: grid;
+      align-content: start;
+    }
+
+    .formula code,
+    .code-block {
+      display: block;
+      white-space: pre-wrap;
+      background: rgba(6, 12, 23, 0.7);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 10px;
+      color: #d8e8ff;
+      line-height: 1.6;
+      font-family: Consolas, Monaco, ui-monospace, monospace;
+      font-size: 0.93rem;
+    }
+
+    .matrix-panel {
+      margin-top: 16px;
+    }
+
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .matrix-cell {
+      padding: 12px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(6, 12, 23, 0.7);
+      text-align: center;
+      font-family: Consolas, Monaco, ui-monospace, monospace;
+      font-size: 0.94rem;
+      line-height: 1.35;
+      color: #d8e8ff;
+    }
+
+    .matrix-label {
+      margin-top: 10px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .matrix-cell.highlight {
+      border-color: rgba(51, 214, 255, 0.5);
+      background: rgba(51, 214, 255, 0.12);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 12px 0 32px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .spark {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      box-shadow: 0 0 0 6px rgba(51, 214, 255, 0.09);
+      background: var(--cyan);
+      vertical-align: middle;
+    }
+
+    .hint {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 50;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(10, 17, 32, 0.85);
+      color: #cfe0ff;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+      max-width: 320px;
+    }
+
+    .hint strong {
+      color: #fff;
+    }
+
+    .scroll-track {
+      position: fixed;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 25;
+      display: grid;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.12);
+      transition: transform 0.2s ease, background 0.2s ease;
+      display: block;
+    }
+
+    .dot.active {
+      background: var(--cyan);
+      transform: scale(1.35);
+    }
+
+    .slide[data-theme="warm"]::before { background: radial-gradient(circle, rgba(255, 201, 60, 0.16), transparent 62%); }
+    .slide[data-theme="mint"]::before { background: radial-gradient(circle, rgba(56, 228, 167, 0.16), transparent 62%); }
+    .slide[data-theme="violet"]::before { background: radial-gradient(circle, rgba(138, 125, 255, 0.16), transparent 62%); }
+
+    .reveal {
+      animation: rise 0.85s ease both;
+    }
+
+    .delay-1 { animation-delay: 0.08s; }
+    .delay-2 { animation-delay: 0.16s; }
+    .delay-3 { animation-delay: 0.24s; }
+    .delay-4 { animation-delay: 0.32s; }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .hero,
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .flow,
+      .metrics,
+      .grid-3,
+      .gallery,
+      .formula {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 820px) {
+      .deck {
+        width: min(calc(100vw - 18px), var(--maxw));
+        padding-top: 10px;
+      }
+
+      .topbar-inner {
+        width: min(calc(100vw - 18px), var(--maxw));
+        padding: 12px 0;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .slide {
+        padding: 16px;
+        border-radius: 22px;
+      }
+
+      .hero,
+      .flow,
+      .grid-2,
+      .grid-3,
+      .gallery,
+      .metrics,
+      .formula {
+        grid-template-columns: 1fr;
+      }
+
+      .scroll-track,
+      .hint {
+        display: none;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .title {
+        font-size: clamp(2.3rem, 12vw, 4rem);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>CUDA Image Studio</h1>
+          <p>Presentation deck for the Python, Tkinter, and CUDA mini project</p>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Presentation sections">
+        <a href="#intro">Intro</a>
+        
+        
+        <a href="#blur-kernel">Blur</a>
+        <a href="#sharpen-kernel">Sharpen</a>
+        <a href="#sobel-kernel">Sobel</a>
+        <a href="#dilation-kernel">Dilate</a>
+        <a href="#erosion-kernel">Erode</a>
+        <a href="#ui">UI</a>
+        <a href="#benchmark">Benchmark</a>
+        <a href="#build">Build</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="scroll-track" aria-hidden="true">
+    <a class="dot active" href="#intro"></a>
+    <a class="dot" href="#flow"></a>
+    <a class="dot" href="#tech"></a>
+    <a class="dot" href="#blur-kernel"></a>
+    <a class="dot" href="#sharpen-kernel"></a>
+    <a class="dot" href="#sobel-kernel"></a>
+    <a class="dot" href="#dilation-kernel"></a>
+    <a class="dot" href="#erosion-kernel"></a>
+    <a class="dot" href="#ui"></a>
+    <a class="dot" href="#benchmark"></a>
+    <a class="dot" href="#build"></a>
+  </div>
+
+  <main class="deck">
+    <section id="intro" class="slide hero" data-theme="mint">
+      <div>
+        <div class="eyebrow reveal">CUDA Image Processing mini project presentation</div>
+        <h2 class="title reveal delay-1">CUDA <span>Image Studio</span></h2>
+        <p class="subtitle reveal delay-2">
+          A colorful desktop application that compares CPU and GPU image processing in a Tkinter interface.
+          It uses a native CUDA shared library, ctypes for Python integration, and benchmark timing to show how much
+          faster optimized GPU kernels can be on real images.
+        </p>
+        <div class="chips reveal delay-2">
+          <span class="chip">Python desktop UI</span>
+          <span class="chip">Tkinter interface</span>
+            The project includes one dedicated slide per CUDA kernel so each technique is easy to explain one at a time.
+            The following slides use the actual GPU kernels from the CUDA source files.
+          </p>
+        </section>
+
+        <section id="blur-kernel" class="slide" data-theme="violet">
+          <h2 class="section-title">Gaussian blur kernel</h2>
+          <p class="section-subtitle">The blur kernel applies a 3x3 weighted filter and is the shared-memory optimized GPU version.</p>
+          <div class="panel">
+            <h3>blur_shared_kernel from gaussian_blur.cu</h3>
+            <div class="code-block">__global__ void blur_shared_kernel(const unsigned char* input, unsigned char* output, int width, int height) {
+        constexpr int tile_width = cudaimg::kTileSize + 2;
+        constexpr int tile_height = cudaimg::kTileSize + 2;
+        __shared__ unsigned char tile[tile_width * tile_height * cudaimg::kChannels];
+
+        const int block_x = blockIdx.x * cudaimg::kTileSize;
+        const int block_y = blockIdx.y * cudaimg::kTileSize;
+        const int thread_index = threadIdx.y * blockDim.x + threadIdx.x;
+        const int threads = blockDim.x * blockDim.y;
+
+        for (int index = thread_index; index < tile_width * tile_height; index += threads) {
+            const int local_x = index % tile_width;
+            const int local_y = index / tile_width;
+            const int global_x = cudaimg::clamp_int(block_x + local_x - 1, 0, width - 1);
+            const int global_y = cudaimg::clamp_int(block_y + local_y - 1, 0, height - 1);
+            const int source = cudaimg::pixel_offset(global_x, global_y, width);
+            const int target = (local_y * tile_width + local_x) * cudaimg::kChannels;
+            tile[target + 0] = input[source + 0];
+            tile[target + 1] = input[source + 1];
+            tile[target + 2] = input[source + 2];
+            tile[target + 3] = input[source + 3];
+        }
+
+        __syncthreads();
+
+        const int x = block_x + threadIdx.x;
+        const int y = block_y + threadIdx.y;
+        if (x >= width || y >= height) {
+            return;
+        }
+
+        float red = 0.0f;
+        float green = 0.0f;
+        float blue = 0.0f;
+        const int local_x = threadIdx.x + 1;
+        const int local_y = threadIdx.y + 1;
+
+        for (int kernel_y = -1; kernel_y <= 1; ++kernel_y) {
+            for (int kernel_x = -1; kernel_x <= 1; ++kernel_x) {
+                const int tile_index = ((local_y + kernel_y) * tile_width + (local_x + kernel_x)) * cudaimg::kChannels;
+                const float weight = kKernelDevice[(kernel_y + 1) * 3 + (kernel_x + 1)];
+                red += weight * tile[tile_index + 0];
+                green += weight * tile[tile_index + 1];
+                blue += weight * tile[tile_index + 2];
+            }
+        }
+
+        const int output_index = cudaimg::pixel_offset(x, y, width);
+        output[output_index + 0] = cudaimg::clamp_byte(red / 16.0f);
+        output[output_index + 1] = cudaimg::clamp_byte(green / 16.0f);
+        output[output_index + 2] = cudaimg::clamp_byte(blue / 16.0f);
+        output[output_index + 3] = tile[((local_y)*tile_width + local_x) * cudaimg::kChannels + 3];
+    }</div>
+          </div>
+          <div class="panel" style="margin-top:16px;">
+            <h3>What to explain</h3>
+            <p>Show how the tile loads a 16x16 block plus a 1-pixel halo, then reuse that shared data for the 3x3 blur.</p>
+          </div>
+          <div class="panel matrix-panel">
+            <h3>3x3 blur matrix</h3>
+            <div class="matrix-grid">
+              <div class="matrix-cell">1</div>
+              <div class="matrix-cell">2</div>
+              <div class="matrix-cell">1</div>
+              <div class="matrix-cell">2</div>
+              <div class="matrix-cell highlight">4</div>
+              <div class="matrix-cell">2</div>
+              <div class="matrix-cell">1</div>
+              <div class="matrix-cell">2</div>
+              <div class="matrix-cell">1</div>
+            </div>
+            <p class="matrix-label">The center pixel gets the highest weight, then the result is divided by 16 to soften the image.</p>
+          </div>
+        </section>
+
+        <section id="sharpen-kernel" class="slide" data-theme="mint">
+          <h2 class="section-title">Sharpening kernel</h2>
+          <p class="section-subtitle">This kernel first computes a blur and then boosts detail by subtracting the blur from the center pixel.</p>
+          <div class="panel">
+            <h3>sharpen_shared_kernel from sharpening.cu</h3>
+            <div class="code-block">__global__ void sharpen_shared_kernel(const unsigned char* input, unsigned char* output, int width, int height, float amount) {
+        constexpr int tile_width = cudaimg::kTileSize + 2;
+        constexpr int tile_height = cudaimg::kTileSize + 2;
+        __shared__ unsigned char tile[tile_width * tile_height * cudaimg::kChannels];
+
+        const int block_x = blockIdx.x * cudaimg::kTileSize;
+        const int block_y = blockIdx.y * cudaimg::kTileSize;
+        const int thread_index = threadIdx.y * blockDim.x + threadIdx.x;
+        const int threads = blockDim.x * blockDim.y;
+
+        for (int index = thread_index; index < tile_width * tile_height; index += threads) {
+            const int local_x = index % tile_width;
+            const int local_y = index / tile_width;
+            const int global_x = cudaimg::clamp_int(block_x + local_x - 1, 0, width - 1);
+            const int global_y = cudaimg::clamp_int(block_y + local_y - 1, 0, height - 1);
+            const int source = cudaimg::pixel_offset(global_x, global_y, width);
+            const int target = (local_y * tile_width + local_x) * cudaimg::kChannels;
+            tile[target + 0] = input[source + 0];
+            tile[target + 1] = input[source + 1];
+            tile[target + 2] = input[source + 2];
+            tile[target + 3] = input[source + 3];
+        }
+
+        __syncthreads();
+
+        const int x = block_x + threadIdx.x;
+        const int y = block_y + threadIdx.y;
+        if (x >= width || y >= height) {
+            return;
+        }
+
+        float blurred_red = 0.0f;
+        float blurred_green = 0.0f;
+        float blurred_blue = 0.0f;
+        const int local_x = threadIdx.x + 1;
+        const int local_y = threadIdx.y + 1;
+
+        for (int kernel_y = -1; kernel_y <= 1; ++kernel_y) {
+            for (int kernel_x = -1; kernel_x <= 1; ++kernel_x) {
+                const int tile_index = ((local_y + kernel_y) * tile_width + (local_x + kernel_x)) * cudaimg::kChannels;
+                const float weight = kKernelDevice[(kernel_y + 1) * 3 + (kernel_x + 1)];
+                blurred_red += weight * tile[tile_index + 0];
+                blurred_green += weight * tile[tile_index + 1];
+                blurred_blue += weight * tile[tile_index + 2];
+            }
+        }
+
+        blurred_red /= 16.0f;
+        blurred_green /= 16.0f;
+        blurred_blue /= 16.0f;
+
+        const int output_index = cudaimg::pixel_offset(x, y, width);
+        output[output_index + 0] = cudaimg::clamp_byte(tile[((local_y)*tile_width + local_x) * cudaimg::kChannels + 0] + amount * (tile[((local_y)*tile_width + local_x) * cudaimg::kChannels + 0] - blurred_red));
+        output[output_index + 1] = cudaimg::clamp_byte(tile[((local_y)*tile_width + local_x) * cudaimg::kChannels + 1] + amount * (tile[((local_y)*tile_width + local_x) * cudaimg::kChannels + 1] - blurred_green));
+        output[output_index + 2] = cudaimg::clamp_byte(tile[((local_y)*tile_width + local_x) * cudaimg::kChannels + 2] + amount * (tile[((local_y)*tile_width + local_x) * cudaimg::kChannels + 2] - blurred_blue));
+        output[output_index + 3] = tile[((local_y)*tile_width + local_x) * cudaimg::kChannels + 3];
+    }</div>
+          </div>
+          <div class="panel" style="margin-top:16px;">
+            <h3>What to explain</h3>
+            <p>The kernel reuses the same 3x3 blur idea, then adds the sharpening term using the `amount` parameter.</p>
+          </div>
+          <div class="panel matrix-panel">
+            <h3>3x3 sharpen neighborhood</h3>
+            <div class="matrix-grid">
+              <div class="matrix-cell">80</div>
+              <div class="matrix-cell">82</div>
+              <div class="matrix-cell">84</div>
+              <div class="matrix-cell">79</div>
+              <div class="matrix-cell highlight">100</div>
+              <div class="matrix-cell">83</div>
+              <div class="matrix-cell">81</div>
+              <div class="matrix-cell">80</div>
+              <div class="matrix-cell">82</div>
+            </div>
+            <p class="matrix-label">The code blurs this neighborhood first, then boosts the center using <span class="accent">center + amount * (center - blurred)</span>.</p>
+          </div>
+        </section>
+
+        <section id="sobel-kernel" class="slide" data-theme="warm">
+          <h2 class="section-title">Sobel edge kernel</h2>
+          <p class="section-subtitle">This kernel measures horizontal and vertical brightness change and combines them into edge strength.</p>
+          <div class="panel">
+            <h3>sobel_shared_kernel from sobel_edge.cu</h3>
+            <div class="code-block">__global__ void sobel_shared_kernel(const unsigned char* input, unsigned char* output, int width, int height, float strength) {
+        constexpr int tile_width = cudaimg::kTileSize + 2;
+        constexpr int tile_height = cudaimg::kTileSize + 2;
+        __shared__ float tile[tile_width * tile_height];
+
+        const int block_x = blockIdx.x * cudaimg::kTileSize;
+        const int block_y = blockIdx.y * cudaimg::kTileSize;
+        const int thread_index = threadIdx.y * blockDim.x + threadIdx.x;
+        const int threads = blockDim.x * blockDim.y;
+
+        for (int index = thread_index; index < tile_width * tile_height; index += threads) {
+            const int local_x = index % tile_width;
+            const int local_y = index / tile_width;
+            const int global_x = cudaimg::clamp_int(block_x + local_x - 1, 0, width - 1);
+            const int global_y = cudaimg::clamp_int(block_y + local_y - 1, 0, height - 1);
+            tile[index] = cudaimg::grayscale_from_rgba(input, global_x, global_y, width, height);
+        }
+
+        __syncthreads();
+
+        const int x = block_x + threadIdx.x;
+        const int y = block_y + threadIdx.y;
+        if (x >= width || y >= height) {
+            return;
+        }
+
+        float gx = 0.0f;
+        float gy = 0.0f;
+        const int local_x = threadIdx.x + 1;
+        const int local_y = threadIdx.y + 1;
+
+        for (int kernel_y = -1; kernel_y <= 1; ++kernel_y) {
+            for (int kernel_x = -1; kernel_x <= 1; ++kernel_x) {
+                const int tile_index = (local_y + kernel_y) * tile_width + (local_x + kernel_x);
+                const int kernel_index = (kernel_y + 1) * 3 + (kernel_x + 1);
+                gx += tile[tile_index] * kSobelXDevice[kernel_index];
+                gy += tile[tile_index] * kSobelYDevice[kernel_index];
+            }
+        }
+
+        const int index = cudaimg::pixel_offset(x, y, width);
+        const unsigned char value = cudaimg::clamp_byte(sqrtf(gx * gx + gy * gy) * fmaxf(1.0f, strength) * 1.6f);
+        output[index + 0] = value;
+        output[index + 1] = value;
+        output[index + 2] = value;
+        output[index + 3] = input[index + 3];
+    }</div>
+          </div>
+          <div class="panel" style="margin-top:16px;">
+            <h3>What to explain</h3>
+            <p>Point out the grayscale conversion, the X/Y gradient kernels, and the final square-root magnitude.</p>
+          </div>
+          <div class="panel matrix-panel">
+            <h3>3x3 Sobel matrices</h3>
+            <div class="grid-2" style="gap:12px; margin-top:12px;">
+              <div>
+                <div class="matrix-label" style="margin-top:0; color: var(--text); font-weight: 700;">Gx</div>
+                <div class="matrix-grid" style="margin-top:10px;">
+                  <div class="matrix-cell">-1</div>
+                  <div class="matrix-cell">0</div>
+                  <div class="matrix-cell">1</div>
+                  <div class="matrix-cell">-2</div>
+                  <div class="matrix-cell highlight">0</div>
+                  <div class="matrix-cell">2</div>
+                  <div class="matrix-cell">-1</div>
+                  <div class="matrix-cell">0</div>
+                  <div class="matrix-cell">1</div>
+                </div>
+              </div>
+              <div>
+                <div class="matrix-label" style="margin-top:0; color: var(--text); font-weight: 700;">Gy</div>
+                <div class="matrix-grid" style="margin-top:10px;">
+                  <div class="matrix-cell">-1</div>
+                  <div class="matrix-cell">-2</div>
+                  <div class="matrix-cell">-1</div>
+                  <div class="matrix-cell">0</div>
+                  <div class="matrix-cell highlight">0</div>
+                  <div class="matrix-cell">0</div>
+                  <div class="matrix-cell">1</div>
+                  <div class="matrix-cell">2</div>
+                  <div class="matrix-cell">1</div>
+                </div>
+              </div>
+            </div>
+            <p class="matrix-label">The shader finds horizontal and vertical changes separately, then combines them with <span class="accent">sqrt(Gx^2 + Gy^2)</span>.</p>
+          </div>
+        </section>
+
+        <section id="dilation-kernel" class="slide" data-theme="mint">
+          <h2 class="section-title">Dilation kernel</h2>
+          <p class="section-subtitle">Dilation expands bright regions by taking the maximum value across the 3x3 neighborhood.</p>
+          <div class="panel">
+            <h3>morphology_shared_kernel from dilation.cu</h3>
+            <div class="code-block">__global__ void morphology_shared_kernel(const unsigned char* input, unsigned char* output, int width, int height, int dilate) {
+        constexpr int tile_width = cudaimg::kTileSize + 2;
+        constexpr int tile_height = cudaimg::kTileSize + 2;
+        __shared__ float tile[tile_width * tile_height];
+
+        const int block_x = blockIdx.x * cudaimg::kTileSize;
+        const int block_y = blockIdx.y * cudaimg::kTileSize;
+        const int thread_index = threadIdx.y * blockDim.x + threadIdx.x;
+        const int threads = blockDim.x * blockDim.y;
+
+        for (int index = thread_index; index < tile_width * tile_height; index += threads) {
+            const int local_x = index % tile_width;
+            const int local_y = index / tile_width;
+            const int global_x = cudaimg::clamp_int(block_x + local_x - 1, 0, width - 1);
+            const int global_y = cudaimg::clamp_int(block_y + local_y - 1, 0, height - 1);
+            tile[index] = cudaimg::grayscale_from_rgba(input, global_x, global_y, width, height);
+        }
+
+        __syncthreads();
+
+        const int x = block_x + threadIdx.x;
+        const int y = block_y + threadIdx.y;
+        if (x >= width || y >= height) {
+            return;
+        }
+
+        float extreme = dilate ? 0.0f : 255.0f;
+        const int local_x = threadIdx.x + 1;
+        const int local_y = threadIdx.y + 1;
+
+        for (int kernel_y = -1; kernel_y <= 1; ++kernel_y) {
+            for (int kernel_x = -1; kernel_x <= 1; ++kernel_x) {
+                const int tile_index = (local_y + kernel_y) * tile_width + (local_x + kernel_x);
+                extreme = dilate ? fmaxf(extreme, tile[tile_index]) : fminf(extreme, tile[tile_index]);
+            }
+        }
+
+        const int index = cudaimg::pixel_offset(x, y, width);
+        const unsigned char value = cudaimg::clamp_byte(extreme);
+        output[index + 0] = value;
+        output[index + 1] = value;
+        output[index + 2] = value;
+        output[index + 3] = input[index + 3];
+    }</div>
+          </div>
+          <div class="panel" style="margin-top:16px;">
+            <h3>What to explain</h3>
+            <p>Show the `fmaxf` call and how the 3x3 window grows bright regions in the output image.</p>
+          </div>
+          <div class="panel matrix-panel">
+            <h3>3x3 dilation neighborhood</h3>
+            <div class="matrix-grid">
+              <div class="matrix-cell">12</div>
+              <div class="matrix-cell">18</div>
+              <div class="matrix-cell">19</div>
+              <div class="matrix-cell">15</div>
+              <div class="matrix-cell">210</div>
+              <div class="matrix-cell">22</div>
+              <div class="matrix-cell">14</div>
+              <div class="matrix-cell">16</div>
+              <div class="matrix-cell highlight">255</div>
+            </div>
+            <p class="matrix-label">Dilation replaces the center with the maximum value from the 3×3 neighborhood (including the center)</p>
+          </div>
+        </section>
+
+        <section id="erosion-kernel" class="slide" data-theme="violet">
+          <h2 class="section-title">Erosion kernel</h2>
+          <p class="section-subtitle">Erosion shrinks bright regions by taking the minimum value across the same 3x3 neighborhood.</p>
+          <div class="panel">
+            <h3>morphology_shared_kernel from erosion.cu</h3>
+            <div class="code-block">__global__ void morphology_shared_kernel(const unsigned char* input, unsigned char* output, int width, int height, int dilate) {
+        constexpr int tile_width = cudaimg::kTileSize + 2;
+        constexpr int tile_height = cudaimg::kTileSize + 2;
+        __shared__ float tile[tile_width * tile_height];
+
+        const int block_x = blockIdx.x * cudaimg::kTileSize;
+        const int block_y = blockIdx.y * cudaimg::kTileSize;
+        const int thread_index = threadIdx.y * blockDim.x + threadIdx.x;
+        const int threads = blockDim.x * blockDim.y;
+
+        for (int index = thread_index; index < tile_width * tile_height; index += threads) {
+            const int local_x = index % tile_width;
+            const int local_y = index / tile_width;
+            const int global_x = cudaimg::clamp_int(block_x + local_x - 1, 0, width - 1);
+            const int global_y = cudaimg::clamp_int(block_y + local_y - 1, 0, height - 1);
+            tile[index] = cudaimg::grayscale_from_rgba(input, global_x, global_y, width, height);
+        }
+
+        __syncthreads();
+
+        const int x = block_x + threadIdx.x;
+        const int y = block_y + threadIdx.y;
+        if (x >= width || y >= height) {
+            return;
+        }
+
+        float extreme = dilate ? 0.0f : 255.0f;
+        const int local_x = threadIdx.x + 1;
+        const int local_y = threadIdx.y + 1;
+
+        for (int kernel_y = -1; kernel_y <= 1; ++kernel_y) {
+            for (int kernel_x = -1; kernel_x <= 1; ++kernel_x) {
+                const int tile_index = (local_y + kernel_y) * tile_width + (local_x + kernel_x);
+                extreme = dilate ? fmaxf(extreme, tile[tile_index]) : fminf(extreme, tile[tile_index]);
+            }
+        }
+
+        const int index = cudaimg::pixel_offset(x, y, width);
+        const unsigned char value = cudaimg::clamp_byte(extreme);
+        output[index + 0] = value;
+        output[index + 1] = value;
+        output[index + 2] = value;
+        output[index + 3] = input[index + 3];
+    }</div>
+          </div>
+          <div class="panel" style="margin-top:16px;">
+            <h3>What to explain</h3>
+            <p>Point out that the erosion kernel is structurally the same as dilation, but it uses `fminf` and starts from 255.</p>
+          </div>
+          <div class="panel matrix-panel">
+            <h3>3x3 erosion neighborhood</h3>
+            <div class="matrix-grid">
+              <div class="matrix-cell">52</div>
+              <div class="matrix-cell">40</div>
+              <div class="matrix-cell">28</div>
+              <div class="matrix-cell">21</div>
+              <div class="matrix-cell">18</div>
+              <div class="matrix-cell">17</div>
+              <div class="matrix-cell highlight">12</div>
+              <div class="matrix-cell">19</div>
+              <div class="matrix-cell">24</div>
+            </div>
+            <p class="matrix-label">Erosion replaces the center with the minimum value from the 3×3 neighborhood (including the center)</p>
+          </div>
+        </section>
+
+        <section id="ui" class="slide" data-theme="mint">
+          <h2 class="section-title">Interface and screenshots</h2>
+          <p class="section-subtitle">
+            These screenshots show the actual app layout, the operation picker, and the benchmark output for different
+            sample images. They are the strongest visuals for a presentation, so they are included directly in the deck.
+          </p>
+          <div class="gallery">
+            <article class="shot">
+              <div class="frame">
+                <img src="app%20ui%20screenshots%20python%20tkinter/homepage.png" alt="CUDA Image Studio homepage screenshot" />
+              </div>
+              <div class="cap">
+                <strong>Home screen</strong>
+                The app opens with a clean left control column, image panels, and benchmark cards.
+              </div>
+            </article>
+            <article class="shot">
+              <div class="frame">
+                <img src="app%20ui%20screenshots%20python%20tkinter/operations%20drop%20down%20menu.png" alt="Operation dropdown menu screenshot" />
+              </div>
+              <div class="cap">
+                <strong>Operation selector</strong>
+                The dropdown shows the available filters: blur, sharpening, Sobel, dilation, and erosion.
+              </div>
+            </article>
+            <article class="shot">
+              <div class="frame">
+                <img src="app%20ui%20screenshots%20python%20tkinter/sharpening%20results%20homepage.png" alt="Sharpening benchmark screenshot" />
+              </div>
+              <div class="cap">
+                <strong>Sharpening result</strong>
+                The output panel and timing cards make it easy to present the CPU and GPU comparison.
+              </div>
+            </article>
+            <article class="shot">
+              <div class="frame">
+                <img src="app%20ui%20screenshots%20python%20tkinter/us%20dollar%20currency%20sobel%20edge%20results.png" alt="Sobel edge benchmark screenshot" />
+              </div>
+              <div class="cap">
+                <strong>Sobel edge result</strong>
+                Strong edges appear clearly in the processed output, which works well for a live demonstration.
+              </div>
+            </article>
+          </div>
+        </section>
+
+    <section id="benchmark" class="slide" data-theme="warm">
+      <h2 class="section-title">Benchmark story</h2>
+      <p class="section-subtitle">
+        The benchmark compares wall-clock time for CPU, CUDA naive, and CUDA optimized paths. That gives the audience a
+        simple performance story without needing to understand the internals of every kernel.
+      </p>
+      <div class="metrics">
+        <div class="metric">
+          <h3>CPU time</h3>
+          <div class="value cyan">Baseline</div>
+          <p>Used as the reference for the speedup calculation and performance comparison.</p>
+        </div>
+        <div class="metric">
+          <h3>CUDA naive</h3>
+          <div class="value gold">Parallel</div>
+          <p>One thread per pixel with direct global-memory reads for an easy-to-understand GPU version.</p>
+        </div>
+        <div class="metric">
+          <h3>CUDA optimized</h3>
+          <div class="value mint">Faster</div>
+          <p>Shared memory reduces repeated reads and usually delivers the strongest result.</p>
+        </div>
+      </div>
+      <div class="formula">
+        <div class="panel">
+          <h3>Timing method</h3>
+          <p>Python measures each native call around the full end-to-end processing path.</p>
+          <code>host to device copy
+kernel execution
+device to host copy
+return to Python</code>
+        </div>
+        <div class="panel">
+          <h3>Interpreting the numbers</h3>
+          <p>If the speedup is above 1, the GPU path is faster than the CPU baseline.</p>
+          <code>speedup = CPU_time / GPU_time</code>
+        </div>
+        <div class="panel">
+          <h3>How to describe the result</h3>
+          <p>On a larger image, the optimized CUDA path should usually show the biggest gain.</p>
+          <code>Higher resolution + better memory reuse = larger win</code>
+        </div>
+      </div>
+    </section>
+
+    <section id="build" class="slide" data-theme="violet">
+      <h2 class="section-title">Build and demo notes</h2>
+      <p class="section-subtitle">
+         final slide 
+      </p>
+      <div class="two-col">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="badge">1</div>
+            <div>
+              <h3>Build the CUDA library</h3>
+              <p>The native shared library is produced from the files in the cuda folder using CMake and NVCC.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="badge">2</div>
+            <div>
+              <h3>Launch the Python UI</h3>
+              <p>Run the Tkinter app from the repository root so it can load the compiled library correctly.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="badge">3</div>
+            <div>
+              <h3>Show the result</h3>
+              <p>Pick an image, choose a filter, run the benchmark, and highlight the CPU versus GPU difference.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Thankyou !</h3>
+          <p>
+            This project demonstrated how a familiar Python GUI can drive a high-performance CUDA backend, turning an
+            ordinary image editor workflow into a practical comparison of CPU and GPU processing.
+          </p>
+          <div class="note" style="margin-top:16px;">
+            <h3>What makes it interesting</h3>
+            <p>
+              It combines interface design, native interop, benchmark measurement, and parallel computing in one compact
+              demo. That makes it easy to explain and visually strong.
+            </p>
+          </div>
+          <div class="band" style="margin-top:16px; background: linear-gradient(135deg, rgba(51,214,255,0.14), rgba(56,228,167,0.14));">
+            
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      <span class="spark"></span>Standalone HTML presentation for CUDA Image Studio
+    </div>
+  </main>
+
+  <div class="hint">
+    <strong>Tip:</strong> use the top navigation to move between sections. 
+  </div>
+
+  <script>
+    const dots = Array.from(document.querySelectorAll('.dot'));
+    const sections = Array.from(document.querySelectorAll('section[id]'));
+
+    const activateSection = () => {
+      const midpoint = window.scrollY + window.innerHeight * 0.45;
+      let activeIndex = 0;
+
+      sections.forEach((section, index) => {
+        const top = section.offsetTop;
+        const bottom = top + section.offsetHeight;
+        if (midpoint >= top && midpoint < bottom) {
+          activeIndex = index;
+        }
+      });
+
+      dots.forEach((dot, index) => dot.classList.toggle('active', index === activeIndex));
+    };
+
+    window.addEventListener('scroll', activateSection, { passive: true });
+    window.addEventListener('resize', activateSection);
+    activateSection();
+  </script>
+</body>
+</html>
